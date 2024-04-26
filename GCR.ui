@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1077</width>
+    <height>845</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Google Chat Message Viewer</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0">
+    <item>
+     <widget class="QTextBrowser" name="textBrowser">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="90,0">
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="loadButton">
+        <property name="text">
+         <string>Load Messages</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBox_F"/>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <item>
+       <widget class="QComboBox" name="comboBox_y"/>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBox_m"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="monthButton">
+        <property name="text">
+         <string>Load month</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_S" stretch="80,10,10">
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_S"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_S">
+        <property name="text">
+         <string>Search in browser</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox">
+        <property name="text">
+         <string>Full words</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_B" stretch="5,75,10,10">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>&gt;4 letters</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_B"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_B">
+        <property name="text">
+         <string>Search in database</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_Clean">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Return</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="progressBar"/>
+    </item>
+   </layout>
+  </widget>
+  <zorder>centralwidget</zorder>
+ </widget>
+ <resources>
+  <include location="GCR.qrc"/>
+ </resources>
+ <connections/>
+</ui>
