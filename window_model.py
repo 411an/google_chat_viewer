@@ -6,6 +6,7 @@ from messages_loader import load_json, create_html_page, progress_emitter, prepa
 from messages_model import Settings, chat_data, resource_path
 import re
 from calendar import month_name, different_locale
+from PyQt5.QtCore import QObject, pyqtSignal, QThread
 
 class ResizableTextBrowser(QTextBrowser):
     resized = pyqtSignal()
@@ -24,6 +25,16 @@ class ScrollListener(QObject):
 
     def scroll_changed(self):
         self.scrollChanged.emit()   
+
+class LoadJsonThread(QThread):
+    def __init__(self, fname):
+        super().__init__()
+        self.fname = fname
+
+    def run(self):
+        messages, dir = load_json(self.fname)
+        chat_data.messages_list = messages
+        chat_data.main_dir = dir
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -85,6 +96,8 @@ class MainWindow(QMainWindow):
 
         # Year-Month combo
         self.comboBox_y.currentIndexChanged.connect(lambda: self.update_month_combo_box(chat_data.date_structure, self.comboBox_y, self.comboBox_m))
+
+        self.load_thread = None
 
     def on_font_changed(self):
             selected_size = int(self.comboBox_F.currentText())
@@ -307,6 +320,7 @@ class MainWindow(QMainWindow):
         else:
             first_id = first_id
             last_id = last_id
+
         #print(first_id, last_id)
         return first_id, last_id
 
@@ -327,33 +341,27 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl(url.toString()))
     
     def load_json(self):
-        self.updating_scrollbar = True
-        self.textBrowser.clear()  
-        self.updating_scrollbar = False
-    
         fname, _ = QFileDialog.getOpenFileName(self, 'Open file', '/home', "JSON files (*.json)")
 
         if fname:
-            # Get locale
-            locale_str = Settings().get_locale()
-            # Get main data
-            messages, dir = load_json(fname)
-            # Save list of messages
-            chat_data.messages_list = messages
-            self.on_messages_list_changed()
-            chat_data.original_messages_list = messages
+            # Cleaning the browser after selected a new file
+            self.updating_scrollbar = True
+            self.textBrowser.clear()
+            self.updating_scrollbar = False
 
-            # Getting size of browser
+            self.load_thread = LoadJsonThread(fname)
+            self.load_thread.finished.connect(self.load_complete)
+            self.load_thread.start()
 
-            text_browser_width = self.textBrowser.width()
-            chat_data.text_browser_width = text_browser_width
-
-            # Loading first data
-            html_source = create_html_page(text_browser_width, dir, messages, start_index=1, end_index=50)
-            self.textBrowser.setHtml(html_source)
+    def load_complete(self):
+        self.on_messages_list_changed()
+        chat_data.original_messages_list = chat_data.messages_list
+        text_browser_width = self.textBrowser.width()
+        chat_data.text_browser_width = text_browser_width
+        html_source = create_html_page(text_browser_width, chat_data.main_dir, chat_data.messages_list, start_index=1, end_index=50)
+        self.textBrowser.setHtml(html_source)
 
     def on_scroll_changed(self):
-
         # Stop if its a start position
         if chat_data.start_message < 0:
             chat_data.start_message = 0
@@ -430,16 +438,16 @@ class MainWindow(QMainWindow):
                 
                 # Checking the size of the browser window for moving correction data 
                 visible_lines = self.get_visible_lines(self.textBrowser)
-                correction = visible_lines // (int(last_id) - int(first_id))
+                correction = visible_lines // (int(last_id) - int(first_id)) if ((int(last_id) - int(first_id))) > 0 else 0
 
                 # checking the direction we are moving
                 if current_position == max_position:
                     line_id = last_id
-                    correction = correction * -1
+                    coeff = (visible_lines // 2) * -1 + correction // 2
                     
                 else:
                     line_id = first_id
-                    correction =  (visible_lines // 2) - correction - 1
+                    coeff =  (visible_lines // 2) - correction * 2
                 
                 # This code is moving scrollbar to the position near the message that user have seen before data was changed
                 # Bad imitation of real scrolling
@@ -452,7 +460,7 @@ class MainWindow(QMainWindow):
                 main_cursor.setPosition(anc_pos)
                 block = main_cursor.block()
                 line_number = block.blockNumber()
-                line_number = line_number + correction if chat_data.searchingFlag == True else line_number
+                line_number = line_number + coeff # if chat_data.searchingFlag == True else line_number
                 target_position = self.textBrowser.document().findBlockByLineNumber(line_number).position()
                 main_cursor.setPosition(target_position)
                 self.textBrowser.setTextCursor(main_cursor)

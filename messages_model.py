@@ -23,10 +23,8 @@ def check_config_file():
     else:
         # set config.ini
         if os.path.exists(users_ini):
-            # Копируем его в папку с ресурсами
             shutil.copy(users_ini, default_ini)
         else:
-            # Копируем config.ini из ресурсов в директорию приложения
             shutil.copy(default_ini, users_ini)
 
 # There are classes to keep data
