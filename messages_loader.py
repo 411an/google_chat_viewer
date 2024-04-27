@@ -106,7 +106,36 @@ def load_json(file_path):
             progress_emitter.emit_progress(progress)
 
 
+
+        messages_data = correcting_export_names(messages_data)
+
         return messages_data, directory
+
+# Correcting names accorfing Google artchive rules - files with the same name just getting numbers
+
+def correcting_export_names(messages_data):
+
+    progress = 0
+    progress_emitter.emit_progress(progress)
+
+    seen_names = {}
+    for i, message_data in enumerate(messages_data):
+        if 'attached_files' in message_data:
+            for attached_file in message_data['attached_files']:
+                export_name = attached_file.get('export_name')
+                if export_name:
+                    if export_name not in seen_names:
+                        seen_names[export_name] = 0
+                    else:
+                        seen_names[export_name] += 1
+                        base_name, ext = os.path.splitext(export_name)
+                        attached_file['export_name'] = f"{base_name}({seen_names[export_name]}){ext}"
+
+        progress = int((i + 1) / chat_data.total_messages * 100)
+        progress_emitter.emit_progress(progress)
+
+    return messages_data
+
 
 def create_html_page(text_browser_width, dir, messages_data, start_index, end_index):
     # Main function for building the page
@@ -135,7 +164,7 @@ def create_html_page(text_browser_width, dir, messages_data, start_index, end_in
 
             # It can be non-text message but I want to have at least space
             text = message_data.get('text', ' ')
-            text = text.replace("\n", "<br>")
+            text = text.replace("\n", "<br>") if len(text) > 1 else text
             
             # Style of message according the name
             alignment = f"text-align: {'left' if name == first_message_name else 'right'}; {'margin-right' if name == first_message_name else 'margin-left'}:{half_width}px;"
@@ -248,8 +277,13 @@ def annotation_parser(message_data):
 
 def resize_image(browser_width, img_width, img_height):
     # New image size is the browser window will resize
-    new_width = browser_width // 3
 
-    new_height = int(new_width * img_height / img_width)
+    if img_width> (browser_width // 3):
+        new_width = browser_width // 3
+        new_height = int(new_width * img_height / img_width)
+    
+    else:
+        new_width = img_width
+        new_height = img_height
 
     return new_width, new_height

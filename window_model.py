@@ -320,6 +320,7 @@ class MainWindow(QMainWindow):
         else:
             first_id = first_id
             last_id = last_id
+
         #print(first_id, last_id)
         return first_id, last_id
 
@@ -361,7 +362,6 @@ class MainWindow(QMainWindow):
         self.textBrowser.setHtml(html_source)
 
     def on_scroll_changed(self):
-
         # Stop if its a start position
         if chat_data.start_message < 0:
             chat_data.start_message = 0
@@ -438,16 +438,16 @@ class MainWindow(QMainWindow):
                 
                 # Checking the size of the browser window for moving correction data 
                 visible_lines = self.get_visible_lines(self.textBrowser)
-                correction = visible_lines // (int(last_id) - int(first_id))
+                correction = visible_lines // (int(last_id) - int(first_id)) if ((int(last_id) - int(first_id))) > 0 else 0
 
                 # checking the direction we are moving
                 if current_position == max_position:
                     line_id = last_id
-                    correction = correction * -1
+                    coeff = (visible_lines // 2) * -1 + correction // 2
                     
                 else:
                     line_id = first_id
-                    correction =  (visible_lines // 2) - correction - 1
+                    coeff =  (visible_lines // 2) - correction * 2
                 
                 # This code is moving scrollbar to the position near the message that user have seen before data was changed
                 # Bad imitation of real scrolling
@@ -460,7 +460,7 @@ class MainWindow(QMainWindow):
                 main_cursor.setPosition(anc_pos)
                 block = main_cursor.block()
                 line_number = block.blockNumber()
-                line_number = line_number + correction if chat_data.searchingFlag == True else line_number
+                line_number = line_number + coeff # if chat_data.searchingFlag == True else line_number
                 target_position = self.textBrowser.document().findBlockByLineNumber(line_number).position()
                 main_cursor.setPosition(target_position)
                 self.textBrowser.setTextCursor(main_cursor)
