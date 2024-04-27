@@ -7,6 +7,7 @@ import datetime
 from messages_model import Settings, chat_data
 from calendar import month_name, different_locale
 from collections import defaultdict
+import numpy as np
 
 class ProgressEmitter(QObject):
     progress_changed = pyqtSignal(int)
@@ -166,7 +167,14 @@ def create_html_page(text_browser_width, dir, messages_data, start_index, end_in
                     if export_name.endswith(('.jpg', '.png', '.jpeg', '.gif')):
                         img_path = os.path.join(dir, export_name)
                         if os.path.exists(img_path):
-                            image = cv2.imread(img_path)
+
+                            #image = cv2.imread(encoded_img_path)
+                            # CV2 cannot read non-latin filenames, so we are encoding this
+                            f = open(img_path, "rb")
+                            chunk = f.read()
+                            chunk_arr = np.frombuffer(chunk, dtype=np.uint8)
+                            image = cv2.imdecode(chunk_arr, cv2.IMREAD_COLOR)
+
                             if image is not None:
                                 height_original, width_original, _ = image.shape
                                 width, height = resize_image(text_browser_width,width_original,height_original)
@@ -177,7 +185,8 @@ def create_html_page(text_browser_width, dir, messages_data, start_index, end_in
                             if image is None and img_path is not None:
                                 img_url = QUrl.fromLocalFile(img_path).toString()
                                 # It also doesnt work with animated gifs so we have it as files only
-                                img_html = f"<p><a href='{img_url}'>(Open the file)</a></p>"
+                                # Other files also can be download here
+                                img_html = f"<p style='text-align: {'left' if name == first_message_name else 'right'};'><a href='{img_url}'>(Open the file)</a></p>"
                                 message_html += img_html
                         else:
                             img_html = f"<p>No file {img_path} in {dir}</p>"

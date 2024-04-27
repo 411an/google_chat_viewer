@@ -6,6 +6,7 @@ from messages_loader import load_json, create_html_page, progress_emitter, prepa
 from messages_model import Settings, chat_data, resource_path
 import re
 from calendar import month_name, different_locale
+from PyQt5.QtCore import QObject, pyqtSignal, QThread
 
 class ResizableTextBrowser(QTextBrowser):
     resized = pyqtSignal()
@@ -24,6 +25,16 @@ class ScrollListener(QObject):
 
     def scroll_changed(self):
         self.scrollChanged.emit()   
+
+class LoadJsonThread(QThread):
+    def __init__(self, fname):
+        super().__init__()
+        self.fname = fname
+
+    def run(self):
+        messages, dir = load_json(self.fname)
+        chat_data.messages_list = messages
+        chat_data.main_dir = dir
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -85,6 +96,8 @@ class MainWindow(QMainWindow):
 
         # Year-Month combo
         self.comboBox_y.currentIndexChanged.connect(lambda: self.update_month_combo_box(chat_data.date_structure, self.comboBox_y, self.comboBox_m))
+
+        self.load_thread = None
 
     def on_font_changed(self):
             selected_size = int(self.comboBox_F.currentText())
@@ -327,30 +340,25 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl(url.toString()))
     
     def load_json(self):
-        self.updating_scrollbar = True
-        self.textBrowser.clear()  
-        self.updating_scrollbar = False
-    
         fname, _ = QFileDialog.getOpenFileName(self, 'Open file', '/home', "JSON files (*.json)")
 
         if fname:
-            # Get locale
-            locale_str = Settings().get_locale()
-            # Get main data
-            messages, dir = load_json(fname)
-            # Save list of messages
-            chat_data.messages_list = messages
-            self.on_messages_list_changed()
-            chat_data.original_messages_list = messages
+            # Cleaning the browser after selected a new file
+            self.updating_scrollbar = True
+            self.textBrowser.clear()
+            self.updating_scrollbar = False
 
-            # Getting size of browser
+            self.load_thread = LoadJsonThread(fname)
+            self.load_thread.finished.connect(self.load_complete)
+            self.load_thread.start()
 
-            text_browser_width = self.textBrowser.width()
-            chat_data.text_browser_width = text_browser_width
-
-            # Loading first data
-            html_source = create_html_page(text_browser_width, dir, messages, start_index=1, end_index=50)
-            self.textBrowser.setHtml(html_source)
+    def load_complete(self):
+        self.on_messages_list_changed()
+        chat_data.original_messages_list = chat_data.messages_list
+        text_browser_width = self.textBrowser.width()
+        chat_data.text_browser_width = text_browser_width
+        html_source = create_html_page(text_browser_width, chat_data.main_dir, chat_data.messages_list, start_index=1, end_index=50)
+        self.textBrowser.setHtml(html_source)
 
     def on_scroll_changed(self):
 
